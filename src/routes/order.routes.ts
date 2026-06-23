@@ -61,7 +61,7 @@ router.get('/me', requireAuth, orderController.getMyOrders);
  *       404:
  *         description: Pedido no encontrado
  */
-router.get('/:id', orderController.getById);
+router.get('/:id', requireAuth, orderController.getById);
 
 /**
  * @openapi

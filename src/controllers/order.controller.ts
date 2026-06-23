@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { z } from 'zod';
 import * as orderService from '@/services/order.service';
 import * as paymentService from '@/services/payment.service';
@@ -25,7 +25,7 @@ const updateStatusSchema = z.object({
 });
 
 export const orderController = {
-  async getAll(_req: Request, res: Response): Promise<void> {
+  async getAll(_req: AuthRequest, res: Response): Promise<void> {
     try {
       const orders = await orderService.getAllOrders();
       res.status(200).json(orders);
@@ -47,9 +47,16 @@ export const orderController = {
     }
   },
 
-  async getById(req: Request, res: Response): Promise<void> {
+  async getById(req: AuthRequest, res: Response): Promise<void> {
     try {
       const order = await orderService.getOrderById(req.params['id'] as string);
+      // Only the owner or an admin can see the order
+      const isOwner = req.user && order.user_id === req.user.userId;
+      const isAdmin = req.user?.role === 'admin';
+      if (!isOwner && !isAdmin) {
+        res.status(403).json({ error: 'Acceso denegado' });
+        return;
+      }
       res.status(200).json(order);
     } catch (e) {
       handleError(res, e);

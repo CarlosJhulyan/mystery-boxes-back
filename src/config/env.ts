@@ -9,7 +9,6 @@ const envSchema = z.object({
   DATABASE_URL: z.string(),
   DIRECT_URL: z.string().optional(),
   JWT_SECRET: z.string(),
-  REDIS_URL: z.string().default('redis://localhost:6379'),
   // Supabase
   SUPABASE_URL: z.string(),
   SUPABASE_ANON_KEY: z.string(),

@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  password_hash String
+  role          String   @default("user")
+  created_at    DateTime @default(now())
+
+  orders Order[]
+}
+
+model Box {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  price       Decimal
+  image_url   String?
+  theme       String
+  rarity      String
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+
+  order_items      OrderItem[]
+  prize_history    BoxPrizeHistory[]
+  coupon_campaigns CouponCampaign[]
+
+  @@index([theme, rarity, price])
+}
+
+model Order {
+  id          String   @id @default(cuid())
+  order_key   String   @unique
+  user_id     String?
+  guest_email String?
+  status      String   @default("pending")
+  total       Decimal
+  created_at  DateTime @default(now())
+
+  user          User?             @relation(fields: [user_id], references: [id])
+  items         OrderItem[]
+  coupon_usages CouponUsage[]
+  prize_history BoxPrizeHistory[]
+}
+
+model OrderItem {
+  id         String  @id @default(cuid())
+  order_id   String
+  box_id     String
+  quantity   Int
+  unit_price Decimal
+
+  order Order @relation(fields: [order_id], references: [id])
+  box   Box   @relation(fields: [box_id], references: [id])
+}
+
+model CouponCampaign {
+  id                String   @id @default(cuid())
+  code              String   @unique
+  influencer_name   String
+  discount_pct      Decimal
+  max_uses          Int?
+  current_uses      Int      @default(0)
+  applicable_box_id String?
+  valid_from        DateTime
+  valid_until       DateTime
+  is_active         Boolean  @default(true)
+  created_at        DateTime @default(now())
+
+  applicable_box Box?          @relation(fields: [applicable_box_id], references: [id])
+  usages         CouponUsage[]
+}
+
+model CouponUsage {
+  id           String   @id @default(cuid())
+  campaign_id  String
+  order_id     String
+  user_email   String
+  discount_amt Decimal
+  used_at      DateTime @default(now())
+
+  campaign CouponCampaign @relation(fields: [campaign_id], references: [id])
+  order    Order          @relation(fields: [order_id], references: [id])
+}
+
+model BoxPrizeHistory {
+  id          String   @id @default(cuid())
+  box_id      String
+  prize_tier  String
+  prize_name  String
+  order_id    String
+  prize_value Decimal
+  revealed_at DateTime @default(now())
+
+  box   Box   @relation(fields: [box_id], references: [id])
+  order Order @relation(fields: [order_id], references: [id])
+
+  @@index([revealed_at(sort: Desc)])
+}

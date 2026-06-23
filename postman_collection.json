@@ -1,0 +1,664 @@
+{
+  "info": {
+    "name": "Mystery Box Peru API",
+    "description": "Colección completa de endpoints para la API de Mystery Box Peru. Incluye auth automático y variables globales.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:4000/api/v1", "type": "string" },
+    { "key": "token", "value": "", "type": "string", "description": "JWT del usuario — se guarda automáticamente al hacer login" },
+    { "key": "admin_token", "value": "", "type": "string", "description": "JWT del admin — se guarda automáticamente al hacer login como admin" },
+    { "key": "box_id", "value": "", "type": "string", "description": "Se llena automáticamente al crear una caja" },
+    { "key": "order_id", "value": "", "type": "string", "description": "Se llena automáticamente al crear una orden" },
+    { "key": "coupon_id", "value": "", "type": "string", "description": "Se llena automáticamente al crear un cupón" },
+    { "key": "user_id", "value": "", "type": "string", "description": "Se llena automáticamente al registrarse" },
+    { "key": "payment_id", "value": "12345678", "type": "string", "description": "ID de pago de MercadoPago para pruebas" }
+  ],
+  "item": [
+    {
+      "name": "👤 Users",
+      "item": [
+        {
+          "name": "Registrar usuario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const res = pm.response.json();",
+                  "  pm.collectionVariables.set('user_id', res.id);",
+                  "  console.log('user_id guardado:', res.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Juan Pérez\",\n  \"email\": \"juan@ejemplo.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/users/register", "host": ["{{base_url}}"], "path": ["users", "register"] }
+          }
+        },
+        {
+          "name": "Login usuario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const res = pm.response.json();",
+                  "  pm.collectionVariables.set('token', res.token);",
+                  "  pm.collectionVariables.set('user_id', res.user.id);",
+                  "  console.log('token guardado');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"carlos@gmail.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/users/login", "host": ["{{base_url}}"], "path": ["users", "login"] }
+          }
+        },
+        {
+          "name": "Login ADMIN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const res = pm.response.json();",
+                  "  pm.collectionVariables.set('admin_token', res.token);",
+                  "  console.log('admin_token guardado');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@mysterybox.pe\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/users/login", "host": ["{{base_url}}"], "path": ["users", "login"] }
+          }
+        },
+        {
+          "name": "Mi perfil",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/users/me", "host": ["{{base_url}}"], "path": ["users", "me"] }
+          }
+        },
+        {
+          "name": "Actualizar perfil",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Juan Pérez Actualizado\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/users/me", "host": ["{{base_url}}"], "path": ["users", "me"] }
+          }
+        },
+        {
+          "name": "Cambiar contraseña",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"nuevaPassword123\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/users/me", "host": ["{{base_url}}"], "path": ["users", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📦 Boxes",
+      "item": [
+        {
+          "name": "Listar todas las cajas",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/boxes", "host": ["{{base_url}}"], "path": ["boxes"] }
+          }
+        },
+        {
+          "name": "Filtrar por tema (Gaming)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/boxes?theme=Gaming",
+              "host": ["{{base_url}}"],
+              "path": ["boxes"],
+              "query": [{ "key": "theme", "value": "Gaming" }]
+            }
+          }
+        },
+        {
+          "name": "Filtrar por rareza (Épico)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/boxes?rarity=Épico",
+              "host": ["{{base_url}}"],
+              "path": ["boxes"],
+              "query": [{ "key": "rarity", "value": "Épico" }]
+            }
+          }
+        },
+        {
+          "name": "Obtener caja por ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/boxes/{{box_id}}", "host": ["{{base_url}}"], "path": ["boxes", "{{box_id}}"] }
+          }
+        },
+        {
+          "name": "Crear caja [ADMIN]",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const res = pm.response.json();",
+                  "  pm.collectionVariables.set('box_id', res.id);",
+                  "  console.log('box_id guardado:', res.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Caja Test Postman\",\n  \"description\": \"Caja creada desde Postman para pruebas\",\n  \"price\": 99.90,\n  \"theme\": \"Gaming\",\n  \"rarity\": \"Raro\",\n  \"image_url\": \"https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=400\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/boxes", "host": ["{{base_url}}"], "path": ["boxes"] }
+          }
+        },
+        {
+          "name": "Actualizar caja [ADMIN]",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Caja Test Actualizada\",\n  \"price\": 149.90,\n  \"is_active\": true\n}"
+            },
+            "url": { "raw": "{{base_url}}/boxes/{{box_id}}", "host": ["{{base_url}}"], "path": ["boxes", "{{box_id}}"] }
+          }
+        },
+        {
+          "name": "Desactivar caja [ADMIN]",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/boxes/{{box_id}}", "host": ["{{base_url}}"], "path": ["boxes", "{{box_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🛒 Orders",
+      "item": [
+        {
+          "name": "Crear orden (usuario autenticado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const res = pm.response.json();",
+                  "  pm.collectionVariables.set('order_id', res.order.id);",
+                  "  console.log('order_id guardado:', res.order.id);",
+                  "  console.log('URL de pago (sandbox):', res.preference.sandbox_init_point);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"box_id\": \"{{box_id}}\", \"quantity\": 1 }\n  ]\n}"
+            },
+            "url": { "raw": "{{base_url}}/orders", "host": ["{{base_url}}"], "path": ["orders"] }
+          }
+        },
+        {
+          "name": "Crear orden (guest checkout)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const res = pm.response.json();",
+                  "  pm.collectionVariables.set('order_id', res.order.id);",
+                  "  console.log('order_id guardado:', res.order.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"guest_email\": \"invitado@correo.com\",\n  \"items\": [\n    { \"box_id\": \"{{box_id}}\", \"quantity\": 1 }\n  ]\n}"
+            },
+            "url": { "raw": "{{base_url}}/orders", "host": ["{{base_url}}"], "path": ["orders"] }
+          }
+        },
+        {
+          "name": "Crear orden con cupón",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"box_id\": \"{{box_id}}\", \"quantity\": 1 }\n  ],\n  \"coupon_code\": \"BIENVENIDO20\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/orders", "host": ["{{base_url}}"], "path": ["orders"] }
+          }
+        },
+        {
+          "name": "Mis órdenes",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/orders/me", "host": ["{{base_url}}"], "path": ["orders", "me"] }
+          }
+        },
+        {
+          "name": "Obtener orden por ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/orders/{{order_id}}", "host": ["{{base_url}}"], "path": ["orders", "{{order_id}}"] }
+          }
+        },
+        {
+          "name": "Listar todas las órdenes [ADMIN]",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/orders", "host": ["{{base_url}}"], "path": ["orders"] }
+          }
+        },
+        {
+          "name": "Confirmar orden y revelar premios [ADMIN]",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"confirmed\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/orders/{{order_id}}/status", "host": ["{{base_url}}"], "path": ["orders", "{{order_id}}", "status"] }
+          }
+        },
+        {
+          "name": "Marcar como enviado [ADMIN]",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"shipped\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/orders/{{order_id}}/status", "host": ["{{base_url}}"], "path": ["orders", "{{order_id}}", "status"] }
+          }
+        },
+        {
+          "name": "Marcar como entregado [ADMIN]",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"delivered\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/orders/{{order_id}}/status", "host": ["{{base_url}}"], "path": ["orders", "{{order_id}}", "status"] }
+          }
+        },
+        {
+          "name": "Cancelar orden [ADMIN]",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"cancelled\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/orders/{{order_id}}/status", "host": ["{{base_url}}"], "path": ["orders", "{{order_id}}", "status"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎟️ Coupons",
+      "item": [
+        {
+          "name": "Validar cupón por código (público)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/coupons/BIENVENIDO20", "host": ["{{base_url}}"], "path": ["coupons", "BIENVENIDO20"] }
+          }
+        },
+        {
+          "name": "Validar cupón GAMER2026",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/coupons/GAMER2026", "host": ["{{base_url}}"], "path": ["coupons", "GAMER2026"] }
+          }
+        },
+        {
+          "name": "Validar cupón inexistente",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/coupons/INVALIDO999", "host": ["{{base_url}}"], "path": ["coupons", "INVALIDO999"] }
+          }
+        },
+        {
+          "name": "Listar todos los cupones [ADMIN]",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/coupons", "host": ["{{base_url}}"], "path": ["coupons"] }
+          }
+        },
+        {
+          "name": "Crear cupón [ADMIN]",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const res = pm.response.json();",
+                  "  pm.collectionVariables.set('coupon_id', res.id);",
+                  "  console.log('coupon_id guardado:', res.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"POSTMAN25\",\n  \"influencer_name\": \"PostmanTester\",\n  \"discount_pct\": 25,\n  \"max_uses\": 50,\n  \"valid_from\": \"2026-01-01T00:00:00Z\",\n  \"valid_until\": \"2026-12-31T23:59:59Z\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/coupons", "host": ["{{base_url}}"], "path": ["coupons"] }
+          }
+        },
+        {
+          "name": "Actualizar cupón [ADMIN]",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_active\": true,\n  \"max_uses\": 100,\n  \"valid_until\": \"2027-06-30T23:59:59Z\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/coupons/{{coupon_id}}", "host": ["{{base_url}}"], "path": ["coupons", "{{coupon_id}}"] }
+          }
+        },
+        {
+          "name": "Desactivar cupón [ADMIN]",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/coupons/{{coupon_id}}", "host": ["{{base_url}}"], "path": ["coupons", "{{coupon_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "💳 Payments",
+      "item": [
+        {
+          "name": "Crear preferencia de pago",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"title\": \"Caja Gamer Élite\",\n      \"quantity\": 1,\n      \"unit_price\": 149.90,\n      \"currency_id\": \"PEN\"\n    }\n  ],\n  \"payer\": {\n    \"email\": \"comprador@test.com\",\n    \"name\": \"Juan Comprador\"\n  },\n  \"orderId\": \"{{order_id}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/payments/preference", "host": ["{{base_url}}"], "path": ["payments", "preference"] }
+          }
+        },
+        {
+          "name": "Consultar estado de pago",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/payments/status/{{payment_id}}", "host": ["{{base_url}}"], "path": ["payments", "status", "{{payment_id}}"] }
+          }
+        },
+        {
+          "name": "Simular webhook MP (pago aprobado)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"payment\",\n  \"data\": {\n    \"id\": \"{{payment_id}}\"\n  }\n}"
+            },
+            "url": { "raw": "{{base_url}}/payments/webhook", "host": ["{{base_url}}"], "path": ["payments", "webhook"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏆 Prizes",
+      "item": [
+        {
+          "name": "Historial público de premios",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/prizes", "host": ["{{base_url}}"], "path": ["prizes"] }
+          }
+        },
+        {
+          "name": "Historial público (últimos 10)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/prizes?limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["prizes"],
+              "query": [{ "key": "limit", "value": "10" }]
+            }
+          }
+        },
+        {
+          "name": "Premios de una caja específica",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/prizes/box/{{box_id}}", "host": ["{{base_url}}"], "path": ["prizes", "box", "{{box_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔧 Admin",
+      "item": [
+        {
+          "name": "Listar todos los usuarios [ADMIN]",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/admin/users", "host": ["{{base_url}}"], "path": ["admin", "users"] }
+          }
+        },
+        {
+          "name": "Promover usuario a admin [ADMIN]",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"admin\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/admin/users/{{user_id}}/role", "host": ["{{base_url}}"], "path": ["admin", "users", "{{user_id}}", "role"] }
+          }
+        },
+        {
+          "name": "Degradar a usuario normal [ADMIN]",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"user\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/admin/users/{{user_id}}/role", "host": ["{{base_url}}"], "path": ["admin", "users", "{{user_id}}", "role"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔴 Error cases",
+      "item": [
+        {
+          "name": "Login con credenciales incorrectas",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"noexiste@correo.com\",\n  \"password\": \"malpassword\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/users/login", "host": ["{{base_url}}"], "path": ["users", "login"] }
+          }
+        },
+        {
+          "name": "Acceder sin token (debe dar 401)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/users/me", "host": ["{{base_url}}"], "path": ["users", "me"] }
+          }
+        },
+        {
+          "name": "Acceder a ruta admin sin ser admin (debe dar 403)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/orders", "host": ["{{base_url}}"], "path": ["orders"] }
+          }
+        },
+        {
+          "name": "Caja inexistente (debe dar 404)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/boxes/id-que-no-existe", "host": ["{{base_url}}"], "path": ["boxes", "id-que-no-existe"] }
+          }
+        },
+        {
+          "name": "Registrar email duplicado (debe dar 409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Duplicado\",\n  \"email\": \"carlos@gmail.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/users/register", "host": ["{{base_url}}"], "path": ["users", "register"] }
+          }
+        },
+        {
+          "name": "Orden sin items (debe dar 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": []\n}"
+            },
+            "url": { "raw": "{{base_url}}/orders", "host": ["{{base_url}}"], "path": ["orders"] }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -42,6 +42,13 @@ export async function createOrder(data: {
   user_id?: string;
   guest_email?: string;
   coupon_code?: string;
+  shipping_name?: string;
+  shipping_dni?: string;
+  shipping_department?: string;
+  shipping_province?: string;
+  shipping_district?: string;
+  shipping_address?: string;
+  shipping_reference?: string;
 }) {
   if (!data.user_id && !data.guest_email) {
     throw { status: 400, message: 'Se requiere email de invitado o autenticación' };
@@ -53,6 +60,14 @@ export async function createOrder(data: {
 
   if (boxes.length !== data.items.length) {
     throw { status: 400, message: 'Una o más cajas no están disponibles' };
+  }
+
+  // Validar stock
+  for (const item of data.items) {
+    const box = boxes.find((b) => b.id === item.box_id)!;
+    if (box.stock < item.quantity) {
+      throw { status: 400, message: `La caja "${box.name}" no tiene suficiente stock` };
+    }
   }
 
   const boxMap = new Map(boxes.map((b) => [b.id, b]));
@@ -81,6 +96,13 @@ export async function createOrder(data: {
         guest_email: data.guest_email ?? null,
         total,
         status: 'pending',
+        shipping_name: data.shipping_name,
+        shipping_dni: data.shipping_dni,
+        shipping_department: data.shipping_department,
+        shipping_province: data.shipping_province,
+        shipping_district: data.shipping_district,
+        shipping_address: data.shipping_address,
+        shipping_reference: data.shipping_reference,
         items: {
           create: data.items.map((item) => ({
             box_id: item.box_id,
@@ -91,6 +113,14 @@ export async function createOrder(data: {
       },
       include: { items: { include: { box: true } } },
     });
+
+    // Decrementar stock de cada caja
+    for (const item of data.items) {
+      await tx.box.update({
+        where: { id: item.box_id },
+        data: { stock: { decrement: item.quantity } },
+      });
+    }
 
     if (coupon) {
       await tx.couponUsage.create({

@@ -6,6 +6,7 @@ import userRouter from './user.routes';
 import paymentRouter from './payment.routes';
 import prizeRouter from './prize.routes';
 import adminRouter from './admin.routes';
+import productRouter from './product.routes';
 
 export const router: import("express").Router = Router();
 
@@ -16,3 +17,4 @@ router.use('/users', userRouter);
 router.use('/payments', paymentRouter);
 router.use('/prizes', prizeRouter);
 router.use('/admin', adminRouter);
+router.use('/products', productRouter);

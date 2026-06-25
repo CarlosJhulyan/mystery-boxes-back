@@ -12,13 +12,18 @@ const createSchema = z.object({
   name: z.string().min(1),
   description: z.string().min(1),
   price: z.number().positive(),
-  image_url: z.string().url().optional(),
+  image_url: z.string().optional(),
   theme: z.string().min(1),
   rarity: z.string().min(1),
+  stock: z.number().int().min(0).optional().default(0),
 });
 
 const updateSchema = createSchema.partial().extend({
   is_active: z.boolean().optional(),
+});
+
+const assignProductSchema = z.object({
+  product_id: z.string().min(1),
 });
 
 export const boxController = {
@@ -72,6 +77,32 @@ export const boxController = {
   async remove(req: AuthRequest, res: Response): Promise<void> {
     try {
       await boxService.removeBox(req.params['id'] as string);
+      res.status(204).send();
+    } catch (e) {
+      handleError(res, e);
+    }
+  },
+
+  async assignProduct(req: AuthRequest, res: Response): Promise<void> {
+    const parsed = assignProductSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'product_id requerido' });
+      return;
+    }
+    try {
+      await boxService.assignProductToBox(req.params['id'] as string, parsed.data.product_id);
+      res.status(201).json({ ok: true });
+    } catch (e) {
+      handleError(res, e);
+    }
+  },
+
+  async removeProduct(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      await boxService.removeProductFromBox(
+        req.params['id'] as string,
+        req.params['productId'] as string
+      );
       res.status(204).send();
     } catch (e) {
       handleError(res, e);

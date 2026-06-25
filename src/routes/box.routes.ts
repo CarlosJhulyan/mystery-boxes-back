@@ -154,4 +154,7 @@ router.put('/:id', requireAuth, requireAdmin, boxController.update);
  */
 router.delete('/:id', requireAuth, requireAdmin, boxController.remove);
 
+router.post('/:id/products', requireAuth, requireAdmin, boxController.assignProduct);
+router.delete('/:id/products/:productId', requireAuth, requireAdmin, boxController.removeProduct);
+
 export default router;

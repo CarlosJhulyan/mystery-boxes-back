@@ -1,3 +1,4 @@
+// backend/prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -27,24 +28,55 @@ model Box {
   image_url   String?
   theme       String
   rarity      String
+  stock       Int      @default(0)
   is_active   Boolean  @default(true)
   created_at  DateTime @default(now())
 
   order_items      OrderItem[]
   prize_history    BoxPrizeHistory[]
   coupon_campaigns CouponCampaign[]
+  products         BoxProduct[]
 
   @@index([theme, rarity, price])
 }
 
+model Product {
+  id         String   @id @default(cuid())
+  name       String
+  image_url  String?
+  tier       String
+  theme      String
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+
+  boxes BoxProduct[]
+}
+
+model BoxProduct {
+  box_id     String
+  product_id String
+
+  box     Box     @relation(fields: [box_id], references: [id])
+  product Product @relation(fields: [product_id], references: [id])
+
+  @@id([box_id, product_id])
+}
+
 model Order {
-  id          String   @id @default(cuid())
-  order_key   String   @unique
-  user_id     String?
-  guest_email String?
-  status      String   @default("pending")
-  total       Decimal
-  created_at  DateTime @default(now())
+  id                  String   @id @default(cuid())
+  order_key           String   @unique
+  user_id             String?
+  guest_email         String?
+  status              String   @default("pending")
+  total               Decimal
+  shipping_name       String?
+  shipping_dni        String?
+  shipping_department String?
+  shipping_province   String?
+  shipping_district   String?
+  shipping_address    String?
+  shipping_reference  String?
+  created_at          DateTime @default(now())
 
   user          User?             @relation(fields: [user_id], references: [id])
   items         OrderItem[]

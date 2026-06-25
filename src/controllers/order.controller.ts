@@ -18,6 +18,13 @@ const createSchema = z.object({
   ).min(1),
   guest_email: z.string().email().optional(),
   coupon_code: z.string().optional(),
+  shipping_name: z.string().min(1).optional(),
+  shipping_dni: z.string().regex(/^\d{8}$/, 'DNI debe tener exactamente 8 dígitos').optional(),
+  shipping_department: z.string().min(1).optional(),
+  shipping_province: z.string().min(1).optional(),
+  shipping_district: z.string().min(1).optional(),
+  shipping_address: z.string().min(1).optional(),
+  shipping_reference: z.string().optional(),
 });
 
 const updateStatusSchema = z.object({

@@ -13,7 +13,15 @@ export async function getAllBoxes(filters?: { theme?: string; rarity?: string })
 }
 
 export async function getBoxById(id: string) {
-  const box = await db.box.findUnique({ where: { id } });
+  const box = await db.box.findUnique({
+    where: { id },
+    include: {
+      products: {
+        include: { product: true },
+        where: { product: { is_active: true } },
+      },
+    },
+  });
   if (!box) throw { status: 404, message: 'Caja no encontrada' };
   return box;
 }
@@ -25,6 +33,7 @@ export async function createBox(data: {
   image_url?: string;
   theme: string;
   rarity: string;
+  stock?: number;
 }) {
   return db.box.create({
     data: {
@@ -34,6 +43,7 @@ export async function createBox(data: {
       image_url: data.image_url,
       theme: data.theme,
       rarity: data.rarity,
+      stock: data.stock ?? 0,
     },
   });
 }
@@ -48,6 +58,7 @@ export async function updateBox(
     theme: string;
     rarity: string;
     is_active: boolean;
+    stock: number;
   }>
 ) {
   const box = await db.box.findUnique({ where: { id } });
@@ -67,4 +78,23 @@ export async function removeBox(id: string) {
   const box = await db.box.findUnique({ where: { id } });
   if (!box) throw { status: 404, message: 'Caja no encontrada' };
   return db.box.update({ where: { id }, data: { is_active: false } });
+}
+
+export async function assignProductToBox(boxId: string, productId: string) {
+  const box = await db.box.findUnique({ where: { id: boxId } });
+  if (!box) throw { status: 404, message: 'Caja no encontrada' };
+  const product = await db.product.findUnique({ where: { id: productId } });
+  if (!product) throw { status: 404, message: 'Producto no encontrado' };
+
+  return db.boxProduct.upsert({
+    where: { box_id_product_id: { box_id: boxId, product_id: productId } },
+    create: { box_id: boxId, product_id: productId },
+    update: {},
+  });
+}
+
+export async function removeProductFromBox(boxId: string, productId: string) {
+  return db.boxProduct.delete({
+    where: { box_id_product_id: { box_id: boxId, product_id: productId } },
+  });
 }

@@ -8,7 +8,8 @@
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "tsx prisma/seed.ts"
+    "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:clear-orders": "tsx prisma/clear-orders.ts"
   },
   "engines": {
     "node": ">=20.0.0"

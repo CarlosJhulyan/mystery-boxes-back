@@ -1,7 +1,46 @@
+import { createHmac, timingSafeEqual } from 'crypto';
 import { Request, Response } from 'express';
 import { createPreference, getPaymentStatus } from '@/services/payment.service';
 import { confirmOrderByKey } from '@/services/order.service';
 import { logger } from '@/config/logger';
+import { env } from '@/config/env';
+
+/**
+ * Verifica la firma HMAC-SHA256 que MercadoPago envía en el header x-signature.
+ * Formato: "ts=<timestamp>,v1=<hex_hmac>"
+ * Manifest firmado: "id:<data.id>;request-id:<x-request-id>;ts:<ts>;"
+ */
+function verifyMpSignature(req: Request, paymentId: string): boolean {
+  const secret = env.MP_WEBHOOK_SECRET;
+  if (!secret) return true; // si no hay secret configurado, saltar (dev sin configurar)
+
+  const xSignature = req.headers['x-signature'] as string | undefined;
+  const xRequestId = req.headers['x-request-id'] as string | undefined;
+
+  if (!xSignature || !xRequestId) {
+    logger.warn({ xSignature, xRequestId }, 'Webhook sin headers de firma');
+    return false;
+  }
+
+  // Extraer ts y v1 del header "ts=...,v1=..."
+  const parts = Object.fromEntries(xSignature.split(',').map((p) => p.split('=')));
+  const ts = parts['ts'];
+  const v1 = parts['v1'];
+
+  if (!ts || !v1) {
+    logger.warn({ xSignature }, 'Header x-signature con formato inválido');
+    return false;
+  }
+
+  const manifest = `id:${paymentId};request-id:${xRequestId};ts:${ts};`;
+  const expected = createHmac('sha256', secret).update(manifest).digest('hex');
+
+  try {
+    return timingSafeEqual(Buffer.from(expected), Buffer.from(v1));
+  } catch {
+    return false;
+  }
+}
 
 export const paymentController = {
   /**
@@ -22,15 +61,21 @@ export const paymentController = {
 
   /**
    * POST /api/v1/payments/webhook
-   * Recibe notificaciones de MercadoPago. Siempre retorna 200.
+   * Recibe notificaciones de MercadoPago. Siempre retorna 200 para evitar reintentos.
    */
   async webhook(req: Request, res: Response): Promise<void> {
     try {
       const body = req.body;
 
       if (body.type === 'payment') {
-        const paymentId = body.data?.id as string;
+        const paymentId = String(body.data?.id ?? '');
         if (paymentId) {
+          if (!verifyMpSignature(req, paymentId)) {
+            logger.warn({ paymentId }, 'Webhook rechazado: firma inválida');
+            res.status(200).json({ received: true });
+            return;
+          }
+
           const status = await getPaymentStatus(paymentId);
           logger.info(
             { paymentId, status: status.status, detail: status.status_detail, orderId: status.external_reference },
@@ -46,7 +91,6 @@ export const paymentController = {
         }
       }
     } catch (error) {
-      // Loggeamos el error pero siempre respondemos 200 a MP
       logger.error(error, 'Error procesando webhook de MercadoPago');
     }
 

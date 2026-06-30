@@ -83,8 +83,8 @@ export const orderController = {
       });
 
       const payer = {
-        email: email || order.guest_email || 'comprador@test.com',
-        name: 'Cliente',
+        email: email || order.guest_email || '',
+        name: parsed.data.shipping_name || 'Comprador',
       };
 
       const mpItems = order.items.map((item) => ({

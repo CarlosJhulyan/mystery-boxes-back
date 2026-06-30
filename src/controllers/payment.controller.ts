@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import { Request, Response } from 'express';
 import { createPreference, getPaymentStatus } from '@/services/payment.service';
-import { confirmOrderByKey } from '@/services/order.service';
+import { confirmOrderByKey, cancelOrderByKey } from '@/services/order.service';
 import { logger } from '@/config/logger';
 import { env } from '@/config/env';
 
@@ -86,6 +86,14 @@ export const paymentController = {
             const order = await confirmOrderByKey(status.external_reference);
             if (order) {
               logger.info({ orderId: order.id }, 'Orden confirmada y premios revelados');
+            }
+          } else if (
+            (status.status === 'rejected' || status.status === 'cancelled') &&
+            status.external_reference
+          ) {
+            const order = await cancelOrderByKey(status.external_reference);
+            if (order) {
+              logger.info({ orderId: order.id, mpStatus: status.status }, 'Orden cancelada por pago rechazado');
             }
           }
         }

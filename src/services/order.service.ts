@@ -172,3 +172,13 @@ export async function confirmOrderByKey(orderKey: string) {
 
   return updated;
 }
+
+export async function cancelOrderByKey(orderKey: string) {
+  const order = await db.order.findUnique({ where: { order_key: orderKey } });
+  if (!order || order.status !== 'pending') return null;
+
+  return db.order.update({
+    where: { order_key: orderKey },
+    data: { status: 'cancelled' },
+  });
+}

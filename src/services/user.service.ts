@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { db } from '@/config/database';
@@ -54,5 +55,46 @@ export async function updateProfile(userId: string, data: { name?: string; passw
     where: { id: userId },
     data: updateData,
     select: USER_SELECT,
+  });
+}
+
+export async function deleteAccount(userId: string): Promise<void> {
+  const user = await db.user.findUnique({ where: { id: userId } });
+  if (!user) throw { status: 404, message: 'Usuario no encontrado' };
+
+  const emailHash = createHash('sha256').update(user.email).digest('hex').slice(0, 16);
+
+  await db.$transaction(async (tx) => {
+    const orders = await tx.order.findMany({
+      where: { user_id: userId },
+      select: { id: true },
+    });
+    const orderIds = orders.map((o) => o.id);
+
+    if (orderIds.length > 0) {
+      // Anonimizar user_email en CouponUsage antes de tocar órdenes
+      await tx.couponUsage.updateMany({
+        where: { order_id: { in: orderIds } },
+        data: { user_email: emailHash },
+      });
+
+      // Desvincular órdenes y borrar PII de envío
+      await tx.order.updateMany({
+        where: { id: { in: orderIds } },
+        data: {
+          user_id: null,
+          shipping_name: null,
+          shipping_dni: null,
+          shipping_department: null,
+          shipping_province: null,
+          shipping_district: null,
+          shipping_address: null,
+          shipping_reference: null,
+        },
+      });
+    }
+
+    // Borrado físico del registro User
+    await tx.user.delete({ where: { id: userId } });
   });
 }

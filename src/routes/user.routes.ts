@@ -128,4 +128,26 @@ router.get('/me', requireAuth, userController.getProfile);
  */
 router.put('/me', requireAuth, userController.updateProfile);
 
+/**
+ * @openapi
+ * /users/me:
+ *   delete:
+ *     tags: [Users]
+ *     summary: Eliminar cuenta (Derecho ARCO — Cancelación / Olvido)
+ *     description: >
+ *       Borra físicamente el registro User y anonimiza de forma irreversible
+ *       los datos de envío y el email en las órdenes e historial de cupones,
+ *       preservando la integridad contable sin reidentificar al titular.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Cuenta eliminada y datos anonimizados
+ *       401:
+ *         description: No autenticado
+ *       404:
+ *         description: Usuario no encontrado
+ */
+router.delete('/me', requireAuth, userController.deleteAccount);
+
 export default router;

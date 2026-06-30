@@ -83,4 +83,17 @@ export const userController = {
       handleError(res, e);
     }
   },
+
+  async deleteAccount(req: AuthRequest, res: Response): Promise<void> {
+    if (!req.user) {
+      res.status(401).json({ error: 'No autenticado' });
+      return;
+    }
+    try {
+      await userService.deleteAccount(req.user.userId);
+      res.status(200).json({ message: 'Cuenta eliminada. Tus datos personales han sido borrados.' });
+    } catch (e) {
+      handleError(res, e);
+    }
+  },
 };
